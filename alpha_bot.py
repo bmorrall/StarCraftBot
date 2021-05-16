@@ -17,6 +17,9 @@ class AlphaBot(sc2.BotAI):
 
         await self.marines_attack()
 
+    def target_barracks(self):
+        return 5
+
     async def train_workers(self):
         ideal = 1  # one for construction
         for cc in self.units(COMMANDCENTER):
@@ -51,9 +54,12 @@ class AlphaBot(sc2.BotAI):
         # barracks_placement_position = self.main_base_ramp.barracks_correct_placement
         barracks_placement_position = self.main_base_ramp.barracks_in_middle
         if self.can_afford(BARRACKS) and not self.already_pending(BARRACKS):
-            if self.units(BARRACKS).amount + self.already_pending(BARRACKS) > 0:
-                return
-            await self.build(BARRACKS, barracks_placement_position)
+            barracks = self.units(BARRACKS)
+            if barracks.amount > 0 and barracks.amount < self.target_barracks():
+                await self.build(BARRACKS, near = barracks.first)
+            elif barracks.amount == 0:
+                # Build the safety barracks
+                await self.build(BARRACKS, barracks_placement_position)
 
     async def expand(self):
         cc_count = self.units(COMMANDCENTER).amount + \
