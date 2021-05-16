@@ -16,6 +16,8 @@ class AlphaBot(sc2.BotAI):
         ideal = 1 # one for construction
         for cc in self.units(COMMANDCENTER):
             ideal += cc.ideal_harvesters
+        # Add pending command center units count
+        ideal += self.already_pending(COMMANDCENTER) * 8
 
         for cc in self.units(COMMANDCENTER).idle:
             if self.workers.amount < ideal and self.can_afford(SCV) and cc.is_idle:
@@ -41,8 +43,10 @@ class AlphaBot(sc2.BotAI):
             if self.can_afford(SUPPLYDEPOT) and self.units(COMMANDCENTER).ready:
                 await self.build(SUPPLYDEPOT, near=depots.last)
 
+
     async def expand(self):
-        if self.units(COMMANDCENTER).amount < 2 and self.can_afford(COMMANDCENTER):
+        cc_count = self.units(COMMANDCENTER).amount + self.already_pending(COMMANDCENTER)
+        if cc_count < 2 and self.can_afford(COMMANDCENTER):
             await self.expand_now()
 
     async def raise_lower_depots(self):
