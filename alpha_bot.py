@@ -1,7 +1,7 @@
 import sc2
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
-from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, \
+from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, MARINE, \
     SUPPLYDEPOTLOWERED, MORPH_SUPPLYDEPOT_LOWER, MORPH_SUPPLYDEPOT_RAISE
 
 
@@ -11,8 +11,11 @@ class AlphaBot(sc2.BotAI):
         await self.train_workers()
         await self.build_supply_depot()
         await self.build_barracks()
+        await self.train_marines()
         await self.raise_lower_depots()
         await self.expand()
+
+        await self.marines_attack()
 
     async def train_workers(self):
         ideal = 1  # one for construction
@@ -73,6 +76,24 @@ class AlphaBot(sc2.BotAI):
                 if unit.position.to2.distance_to(depo.position.to2) < 10:
                     await self.do(depo(MORPH_SUPPLYDEPOT_RAISE))
                     break
+
+    async def train_marines(self):
+        for barracks in self.units(BARRACKS).idle:
+            if self.can_afford(MARINE) and barracks.is_idle:
+                await self.do(barracks.train(MARINE))
+
+    # Attack with all Marines
+    async def marines_attack(self):
+        if self.units(MARINE).amount < 20:
+            return
+
+        if self.known_enemy_units:
+            target = self.known_enemy_units.first
+        else:
+            target = self.enemy_start_locations[0]
+
+        for marine in self.units(MARINE):
+            await self.do(marine.attack(target))
 
     # Attack with all Workers
     async def worker_attack(self):
