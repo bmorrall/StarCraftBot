@@ -1,1 +1,4 @@
+# Ignore reference libarires
 /pysc2
+/python-sc2
+
