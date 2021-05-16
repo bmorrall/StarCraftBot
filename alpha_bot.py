@@ -8,13 +8,13 @@ from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, \
 class AlphaBot(sc2.BotAI):
     async def on_step(self, iteration):
         await self.distribute_workers()  # in sc2/bot_ai.py
-        await self.build_workers()
+        await self.train_workers()
         await self.build_supply_depot()
         await self.build_barracks()
         await self.raise_lower_depots()
         await self.expand()
 
-    async def build_workers(self):
+    async def train_workers(self):
         ideal = 1  # one for construction
         for cc in self.units(COMMANDCENTER):
             ideal += cc.ideal_harvesters
