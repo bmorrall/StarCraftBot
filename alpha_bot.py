@@ -13,9 +13,13 @@ class AlphaBot(sc2.BotAI):
         await self.expand()
 
     async def build_workers(self):
-        for command_center in self.units(COMMANDCENTER).idle:
-            if self.can_afford(SCV) and self.workers.amount < 16 and command_center.noqueue:
-                await self.do(command_center.train(SCV))
+        ideal = 1 # one for construction
+        for cc in self.units(COMMANDCENTER):
+            ideal += cc.ideal_harvesters
+
+        for cc in self.units(COMMANDCENTER).idle:
+            if self.workers.amount < ideal and self.can_afford(SCV) and cc.is_idle:
+                await self.do(cc.train(SCV))
 
     async def build_supply_depot(self):
         # Find all urgently required depot locations
