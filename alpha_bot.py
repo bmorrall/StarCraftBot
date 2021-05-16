@@ -9,6 +9,7 @@ class AlphaBot(sc2.BotAI):
         await self.distribute_workers()  # in sc2/bot_ai.py
         await self.build_workers()
         await self.build_supply_depot()
+        await self.expand()
 
     async def build_workers(self):
         for command_center in self.units(COMMANDCENTER).idle:
@@ -21,6 +22,10 @@ class AlphaBot(sc2.BotAI):
             if command_centers.exists:
                 if self.can_afford(SUPPLYDEPOT):
                     await self.build(SUPPLYDEPOT, near=command_centers.first)
+
+    async def expand(self):
+        if self.units(COMMANDCENTER).amount < 2 and self.can_afford(COMMANDCENTER):
+            await self.expand_now()
 
     # Attack with all Workers
     async def worker_attack(self):
