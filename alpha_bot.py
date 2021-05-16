@@ -13,7 +13,7 @@ class AlphaBot(sc2.BotAI):
 
     async def build_workers(self):
         for command_center in self.units(COMMANDCENTER).idle:
-            if self.can_afford(SCV):
+            if self.can_afford(SCV) and self.workers.amount < 16 and command_center.noqueue:
                 await self.do(command_center.train(SCV))
 
     async def build_supply_depot(self):
