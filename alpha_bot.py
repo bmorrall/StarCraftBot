@@ -1,7 +1,7 @@
 import sc2
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
-from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT
+from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, SUPPLYDEPOTLOWERED, MORPH_SUPPLYDEPOT_LOWER, MORPH_SUPPLYDEPOT_RAISE
 
 
 class AlphaBot(sc2.BotAI):
@@ -9,6 +9,7 @@ class AlphaBot(sc2.BotAI):
         await self.distribute_workers()  # in sc2/bot_ai.py
         await self.build_workers()
         await self.build_supply_depot()
+        await self.raise_lower_depots()
         await self.expand()
 
     async def build_workers(self):
@@ -26,6 +27,22 @@ class AlphaBot(sc2.BotAI):
     async def expand(self):
         if self.units(COMMANDCENTER).amount < 2 and self.can_afford(COMMANDCENTER):
             await self.expand_now()
+
+    async def raise_lower_depots(self):
+        # Raise depos when enemies are nearby
+        for depo in self.units(SUPPLYDEPOT).ready:
+            for unit in self.known_enemy_units.not_structure:
+                if unit.position.to2.distance_to(depo.position.to2) < 15:
+                    break
+            else:
+                await self.do(depo(MORPH_SUPPLYDEPOT_LOWER))
+
+        # Lower depos when no enemies are nearby
+        for depo in self.units(SUPPLYDEPOTLOWERED).ready:
+            for unit in self.known_enemy_units.not_structure:
+                if unit.position.to2.distance_to(depo.position.to2) < 10:
+                    await self.do(depo(MORPH_SUPPLYDEPOT_RAISE))
+                    break
 
     # Attack with all Workers
     async def worker_attack(self):
