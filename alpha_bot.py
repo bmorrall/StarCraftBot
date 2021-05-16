@@ -18,11 +18,24 @@ class AlphaBot(sc2.BotAI):
                 await self.do(command_center.train(SCV))
 
     async def build_supply_depot(self):
-        if self.supply_left < 5 and not self.already_pending(SUPPLYDEPOT):
-            command_centers = self.units(COMMANDCENTER).ready
-            if command_centers.exists:
-                if self.can_afford(SUPPLYDEPOT):
-                    await self.build(SUPPLYDEPOT, near=command_centers.first)
+        # Find all urgently required depot locations
+        depot_placement_positions = self.main_base_ramp.corner_depots | {
+            self.main_base_ramp.depot_in_middle}
+        depots = self.units(SUPPLYDEPOT) | self.units(SUPPLYDEPOTLOWERED)
+        if depots:
+            depot_placement_positions = {
+                d for d in depot_placement_positions if depots.closest_distance_to(d) > 1}
+
+        # Urgently build supply depots (anti-cheese)
+        if len(depot_placement_positions) > 0:
+            target_depot_location = depot_placement_positions.pop()
+            if self.can_afford(SUPPLYDEPOT):
+                await self.build(SUPPLYDEPOT, target_depot_location)
+
+        # Build any other supply depots as needed
+        elif self.supply_left < 5 and not self.already_pending(SUPPLYDEPOT):
+            if self.can_afford(SUPPLYDEPOT) and self.units(COMMANDCENTER).ready:
+                await self.build(SUPPLYDEPOT, near=depots.last)
 
     async def expand(self):
         if self.units(COMMANDCENTER).amount < 2 and self.can_afford(COMMANDCENTER):
