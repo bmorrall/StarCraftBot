@@ -20,16 +20,19 @@ class AlphaBot(sc2.BotAI):
     def target_barracks(self):
         return 5
 
-    async def train_workers(self):
+    def target_workers(self):
         ideal = 1  # one for construction
         for cc in self.units(COMMANDCENTER):
             ideal += cc.ideal_harvesters
         # Add pending command center units count
         ideal += self.already_pending(COMMANDCENTER) * 8
+        return ideal
 
-        for cc in self.units(COMMANDCENTER).idle:
-            if self.workers.amount < ideal and self.can_afford(SCV) and cc.is_idle:
-                await self.do(cc.train(SCV))
+    async def train_workers(self):
+        if self.workers.amount < self.target_workers():
+            for cc in self.units(COMMANDCENTER).idle:
+                if self.can_afford(SCV):
+                    await self.do(cc.train(SCV))
 
     async def build_supply_depot(self):
         # Find all urgently required depot locations
