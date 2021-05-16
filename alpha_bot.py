@@ -2,7 +2,7 @@ import sc2
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
 from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, MARINE, \
-    REFINERY, \
+    REFINERY, FACTORY, HELLION, \
     SUPPLYDEPOTLOWERED, MORPH_SUPPLYDEPOT_LOWER, MORPH_SUPPLYDEPOT_RAISE
 
 
@@ -13,14 +13,27 @@ class AlphaBot(sc2.BotAI):
         await self.build_supply_depot()
         await self.build_barracks()
         await self.build_refineries()
+        await self.build_factories()
         await self.train_marines()
+        await self.train_hellions()
         await self.raise_lower_depots()
         await self.expand()
 
-        await self.marines_attack()
+        if self.units(MARINE).amount >= 20:
+            await self.marines_attack()
+            await self.hellions_attack()
 
     def target_barracks(self):
         return 5
+
+    def target_refineries(self):
+        return self.units(BARRACKS).amount
+
+    def target_factories(self):
+        if not self.units(BARRACKS):
+            return 0
+
+        return self.units(REFINERY).amount
 
     def target_workers(self):
         ideal = 1  # one for construction
@@ -31,9 +44,6 @@ class AlphaBot(sc2.BotAI):
         # Add refinery counts
         ideal += self.units(REFINERY).amount * 3
         return ideal
-
-    def target_refineries(self):
-        return self.units(BARRACKS).amount
 
     async def train_workers(self):
         if self.workers.amount < self.target_workers():
@@ -86,6 +96,13 @@ class AlphaBot(sc2.BotAI):
                     target -= 1
                     await self.do(worker.build(REFINERY, vaspene))
 
+    async def build_factories(self):
+        factories_amount = self.units(FACTORY).amount
+        target = self.target_factories()
+
+        if factories_amount < target and self.can_afford(FACTORY):
+            await self.build(FACTORY, near=self.units(BARRACKS).first)
+
     async def expand(self):
         cc_count = self.units(COMMANDCENTER).amount + \
             self.already_pending(COMMANDCENTER)
@@ -113,11 +130,13 @@ class AlphaBot(sc2.BotAI):
             if self.can_afford(MARINE) and barracks.is_idle:
                 await self.do(barracks.train(MARINE))
 
+    async def train_hellions(self):
+        for factory in self.units(FACTORY).idle:
+            if self.can_afford(HELLION):
+                await self.do(factory.train(HELLION))
+
     # Attack with all Marines
     async def marines_attack(self):
-        if self.units(MARINE).amount < 20:
-            return
-
         if self.known_enemy_units:
             target = self.known_enemy_units.first
         else:
@@ -125,6 +144,12 @@ class AlphaBot(sc2.BotAI):
 
         for marine in self.units(MARINE):
             await self.do(marine.attack(target))
+
+    # Attack with all Hellions
+    async def hellions_attack(self):
+        target = self.enemy_start_locations[0]
+        for hellion in self.units(HELLION):
+            await self.do(hellion.attack(target))
 
     # Attack with all Workers
     async def worker_attack(self):
