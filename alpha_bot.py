@@ -2,6 +2,7 @@ import sc2
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
 from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, MARINE, \
+    REFINERY, \
     SUPPLYDEPOTLOWERED, MORPH_SUPPLYDEPOT_LOWER, MORPH_SUPPLYDEPOT_RAISE
 
 
@@ -11,6 +12,7 @@ class AlphaBot(sc2.BotAI):
         await self.train_workers()
         await self.build_supply_depot()
         await self.build_barracks()
+        await self.build_refineries()
         await self.train_marines()
         await self.raise_lower_depots()
         await self.expand()
@@ -26,7 +28,12 @@ class AlphaBot(sc2.BotAI):
             ideal += cc.ideal_harvesters
         # Add pending command center units count
         ideal += self.already_pending(COMMANDCENTER) * 8
+        # Add refinery counts
+        ideal += self.units(REFINERY).amount * 3
         return ideal
+
+    def target_refineries(self):
+        return self.units(BARRACKS).amount
 
     async def train_workers(self):
         if self.workers.amount < self.target_workers():
@@ -59,10 +66,25 @@ class AlphaBot(sc2.BotAI):
         if self.can_afford(BARRACKS) and not self.already_pending(BARRACKS):
             barracks = self.units(BARRACKS)
             if barracks.amount > 0 and barracks.amount < self.target_barracks():
-                await self.build(BARRACKS, near = barracks.first)
+                await self.build(BARRACKS, near=barracks.first)
             elif barracks.amount == 0:
                 # Build the safety barracks
                 await self.build(BARRACKS, barracks_placement_position)
+
+    async def build_refineries(self):
+        target = self.target_refineries()
+        target -= self.units(REFINERY).amount
+
+        for cc in self.units(COMMANDCENTER).ready:
+            vaspenes = self.state.vespene_geyser.closer_than(25.0, cc)
+            for vaspene in vaspenes:
+                if self.can_afford(REFINERY) and target > 0:
+                    worker = self.select_build_worker(vaspene.position)
+                    if worker is None:
+                        break
+
+                    target -= 1
+                    await self.do(worker.build(REFINERY, vaspene))
 
     async def expand(self):
         cc_count = self.units(COMMANDCENTER).amount + \
