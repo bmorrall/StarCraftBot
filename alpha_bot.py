@@ -76,7 +76,8 @@ class AlphaBot(sc2.BotAI):
         # Build any other supply depots as needed
         elif self.supply_left < 5 and not self.already_pending(SUPPLYDEPOT):
             if self.can_afford(SUPPLYDEPOT) and self.units(COMMANDCENTER).ready:
-                await self.build(SUPPLYDEPOT, near=self.units(COMMANDCENTER).random)
+                await self.build(SUPPLYDEPOT, near=self.units(COMMANDCENTER).random.position.towards(self.game_info.map_center, 8))
+
 
     async def build_barracks(self):
         # barracks_placement_position = self.main_base_ramp.barracks_correct_placement
