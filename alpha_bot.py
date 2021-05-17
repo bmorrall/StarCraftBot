@@ -2,7 +2,7 @@ import sc2
 from sc2 import run_game, maps, Race, Difficulty
 from sc2.player import Bot, Computer
 from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, MARINE, \
-    REFINERY, FACTORY, HELLION, \
+    REFINERY, FACTORY, HELLION, REAPER, \
     SUPPLYDEPOTLOWERED, MORPH_SUPPLYDEPOT_LOWER, MORPH_SUPPLYDEPOT_RAISE
 
 
@@ -14,6 +14,7 @@ class AlphaBot(sc2.BotAI):
         await self.build_barracks()
         await self.build_refineries()
         await self.build_factories()
+        await self.train_reaper()
         await self.train_marines()
         await self.train_hellions()
         await self.raise_lower_depots()
@@ -137,6 +138,12 @@ class AlphaBot(sc2.BotAI):
                 if unit.position.to2.distance_to(depo.position.to2) < 10:
                     await self.do(depo(MORPH_SUPPLYDEPOT_RAISE))
                     break
+
+    async def train_reaper(self):
+        if self.units(REAPER).amount + self.already_pending(REAPER) == 0:
+            if self.units(BARRACKS).idle:
+                barracks = self.units(BARRACKS).idle.first
+                await self.do(barracks.train(REAPER))
 
     async def train_marines(self):
         for barracks in self.units(BARRACKS).idle:
