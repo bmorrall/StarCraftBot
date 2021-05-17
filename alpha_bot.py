@@ -27,7 +27,13 @@ class AlphaBot(sc2.BotAI):
         return 5
 
     def target_refineries(self):
-        return self.units(BARRACKS).amount
+        if not self.units(BARRACKS):
+            return 0
+
+        target = 0
+        for cc in self.units(COMMANDCENTER).ready:
+            target += self.state.vespene_geyser.closer_than(25.0, cc).amount
+        return target
 
     def target_factories(self):
         if not self.units(BARRACKS):
@@ -84,6 +90,10 @@ class AlphaBot(sc2.BotAI):
     async def build_refineries(self):
         target = self.target_refineries()
         target -= self.units(REFINERY).amount
+        target -= self.already_pending(REFINERY)
+
+        if target <= 0:
+            return
 
         for cc in self.units(COMMANDCENTER).ready:
             vaspenes = self.state.vespene_geyser.closer_than(25.0, cc)
