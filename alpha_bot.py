@@ -19,8 +19,8 @@ class AlphaBot(sc2.BotAI):
         await self.raise_lower_depots()
         await self.expand()
 
+        await self.marines_attack()
         if self.units(MARINE).amount >= 20:
-            await self.marines_attack()
             await self.hellions_attack()
 
     def target_barracks(self):
@@ -147,17 +147,25 @@ class AlphaBot(sc2.BotAI):
 
     # Attack with all Marines
     async def marines_attack(self):
-        if self.known_enemy_units:
-            target = self.known_enemy_units.first
+        if self.known_enemy_structures:
+            target = self.known_enemy_structures.first
         else:
             target = self.enemy_start_locations[0]
 
         for marine in self.units(MARINE):
-            await self.do(marine.attack(target))
+            attackable_units = self.known_enemy_units.not_structure.visible.in_attack_range_of(unit=marine, bonus_distance=5)
+            if attackable_units:
+                await self.do(marine.attack(attackable_units.sorted_by_distance_to(marine).first))
+            elif self.units(MARINE).amount >= 20:
+                await self.do(marine.attack(target))
 
     # Attack with all Hellions
     async def hellions_attack(self):
-        target = self.enemy_start_locations[0]
+        if self.known_enemy_units.visible:
+            target = self.known_enemy_units.visible.first
+        else:
+            target = self.enemy_start_locations[0]
+
         for hellion in self.units(HELLION):
             await self.do(hellion.attack(target))
 
