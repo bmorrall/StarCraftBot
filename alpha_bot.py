@@ -32,6 +32,8 @@ class AlphaBot(sc2.BotAI):
     def target_refineries(self):
         if not self.units(BARRACKS):
             return 0
+        elif not self.units(FACTORY) and self.already_pending(FACTORY) == 0:
+            return 1
 
         target = 0
         for cc in self.units(COMMANDCENTER).ready:
@@ -75,10 +77,9 @@ class AlphaBot(sc2.BotAI):
                 await self.build(SUPPLYDEPOT, target_depot_location)
 
         # Build any other supply depots as needed
-        elif self.supply_left < 5 and not self.already_pending(SUPPLYDEPOT):
+        elif self.supply_left < 5 and self.already_pending(SUPPLYDEPOT) < self.units(BARRACKS).amount:
             if self.can_afford(SUPPLYDEPOT) and self.units(COMMANDCENTER).ready:
                 await self.build(SUPPLYDEPOT, near=self.units(COMMANDCENTER).random.position.towards(self.game_info.map_center, 8))
-
 
     async def build_barracks(self):
         # barracks_placement_position = self.main_base_ramp.barracks_correct_placement
