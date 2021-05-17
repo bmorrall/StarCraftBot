@@ -1,5 +1,8 @@
+import random
+
 import sc2
 from sc2 import run_game, maps, Race, Difficulty
+from sc2 import position
 from sc2.player import Bot, Computer
 from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, MARINE, \
     REFINERY, FACTORY, HELLION, REAPER, \
@@ -7,6 +10,9 @@ from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, MARINE, \
 
 
 class AlphaBot(sc2.BotAI):
+    def __init__(self):
+        self.scout_target = None
+
     async def on_step(self, iteration):
         await self.distribute_workers()  # in sc2/bot_ai.py
         await self.train_workers()
@@ -20,6 +26,7 @@ class AlphaBot(sc2.BotAI):
         await self.raise_lower_depots()
         await self.expand()
 
+        await self.move_reaper()
         await self.marines_attack()
         if self.units(MARINE).amount >= 20:
             await self.hellions_attack()
@@ -142,7 +149,7 @@ class AlphaBot(sc2.BotAI):
 
     async def train_reaper(self):
         if self.units(REAPER).amount + self.already_pending(REAPER) == 0:
-            if self.units(BARRACKS).idle:
+            if self.units(BARRACKS).idle and self.can_afford(REAPER):
                 barracks = self.units(BARRACKS).idle.first
                 await self.do(barracks.train(REAPER))
 
@@ -156,7 +163,19 @@ class AlphaBot(sc2.BotAI):
             if self.can_afford(HELLION):
                 await self.do(factory.train(HELLION))
 
+    async def move_reaper(self):
+        if self.units(REAPER):
+            reaper = self.units(REAPER).first
+            if self.scout_target is None or reaper.distance_to(p=self.scout_target) < 5:
+                print("Found target")
+                self.scout_target = random.choice(
+                    list(self.expansion_locations))
+            await self.do(reaper.move(self.scout_target))
+        else:
+            self.scout_target = None
+
     # Attack with all Marines
+
     async def marines_attack(self):
         if self.known_enemy_structures:
             target = self.known_enemy_structures.first
@@ -164,7 +183,8 @@ class AlphaBot(sc2.BotAI):
             target = self.enemy_start_locations[0]
 
         for marine in self.units(MARINE):
-            attackable_units = self.known_enemy_units.not_structure.visible.in_attack_range_of(unit=marine, bonus_distance=5)
+            attackable_units = self.known_enemy_units.not_structure.visible.in_attack_range_of(
+                unit=marine, bonus_distance=5)
             if attackable_units:
                 await self.do(marine.attack(attackable_units.sorted_by_distance_to(marine).first))
             elif self.units(MARINE).amount >= 20:
