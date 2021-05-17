@@ -125,7 +125,7 @@ class AlphaBot(sc2.BotAI):
     async def raise_lower_depots(self):
         # Raise depos when enemies are nearby
         for depo in self.units(SUPPLYDEPOT).ready:
-            for unit in self.known_enemy_units.not_structure:
+            for unit in self.known_enemy_units.not_structure.visible:
                 if unit.position.to2.distance_to(depo.position.to2) < 15:
                     break
             else:
@@ -133,7 +133,7 @@ class AlphaBot(sc2.BotAI):
 
         # Lower depos when no enemies are nearby
         for depo in self.units(SUPPLYDEPOTLOWERED).ready:
-            for unit in self.known_enemy_units.not_structure:
+            for unit in self.known_enemy_units.not_structure.visible:
                 if unit.position.to2.distance_to(depo.position.to2) < 10:
                     await self.do(depo(MORPH_SUPPLYDEPOT_RAISE))
                     break
