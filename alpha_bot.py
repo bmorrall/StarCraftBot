@@ -24,6 +24,8 @@ class AlphaBot(sc2.BotAI):
             await self.hellions_attack()
 
     def target_barracks(self):
+        if self.units(COMMANDCENTER).amount == 1:
+            return 1
         return 5
 
     def target_refineries(self):
