@@ -2,9 +2,10 @@ from abc import abstractmethod
 
 import sc2
 from sc2 import units
-from sc2.constants import COMMANDCENTER, BARRACKS, REFINERY, \
+from sc2.constants import COMMANDCENTER, ORBITALCOMMAND, BARRACKS, REFINERY, \
     SUPPLYDEPOT, SUPPLYDEPOTLOWERED, SUPPLYDEPOTDROP, \
     FACTORY
+from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.position import Point2
 from sc2.unit import Unit
@@ -108,7 +109,7 @@ class SupplyDepotBuilder(StructureBuilder):
 
         # Build any other supply depots as needed
         map_center = self.game.game_info.map_center
-        return self.game.units(COMMANDCENTER).random.position.towards(map_center, 8)
+        return self.game.units.of_type([COMMANDCENTER, ORBITALCOMMAND]).random.position.towards(map_center, 8)
 
 
 class QuotaStructureBuilder(StructureBuilder):
@@ -142,8 +143,26 @@ class CommandCenterBuilder(QuotaStructureBuilder):
     def __init__(self, game: sc2.BotAI, target: int = 1) -> None:
         super().__init__(game, COMMANDCENTER, target=target)
 
+    @property
+    def calculate_known_total(self) -> int:
+        return self.game.units.of_type([COMMANDCENTER, ORBITALCOMMAND]).amount
+
     async def build_single(self):
         return await self.game.expand_now()
+
+
+class OrbitalCommandBuilder(QuotaStructureBuilder):
+    def __init__(self, game: sc2.BotAI) -> None:
+        super().__init__(game, ORBITALCOMMAND)
+
+    def should_build(self):
+        return super().should_build() and self.game.units(COMMANDCENTER).idle and self.game.units(BARRACKS).ready.exists
+
+    async def build_single(self):
+        for cc in self.game.units(COMMANDCENTER).idle:
+            return await self.game.do(cc(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND))
+
+        return True
 
 
 class RefineryBuilder(QuotaStructureBuilder):
@@ -152,7 +171,7 @@ class RefineryBuilder(QuotaStructureBuilder):
 
     async def build_single(self):
         # Build a refinery on the first vacant geyser
-        for cc in self.game.units(COMMANDCENTER).ready:
+        for cc in self.game.units.of_type([COMMANDCENTER, ORBITALCOMMAND]).ready:
             vespenes = self.game.state.vespene_geyser.closer_than(25.0, cc)
             for vespene in vespenes:
                 if self.game.units(REFINERY).closer_than(distance=1, position=vespene.position):

@@ -1,5 +1,5 @@
 import sc2
-from sc2.constants import COMMANDCENTER, SCV
+from sc2.constants import COMMANDCENTER, ORBITALCOMMAND, SCV
 from sc2.constants import SUPPLYDEPOT, SUPPLYDEPOTLOWERED, MORPH_SUPPLYDEPOT_LOWER, MORPH_SUPPLYDEPOT_RAISE
 
 from .build_info import BuildInfo
@@ -19,7 +19,7 @@ class TerranBot(sc2.BotAI):
 
     async def train_workers(self):
         workers_wanted = self.build_info.workers_wanted
-        for cc in self.units(COMMANDCENTER).ready.idle:
+        for cc in self.units.of_type([COMMANDCENTER, ORBITALCOMMAND]).ready.idle:
             if workers_wanted > 0 and self.can_afford(SCV):
                 workers_wanted -= 1
                 await self.do(cc.train(SCV))

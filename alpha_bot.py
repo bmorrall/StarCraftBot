@@ -7,7 +7,7 @@ from sc2 import position
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.player import Bot, Computer
 from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, MARINE, \
-    REFINERY, FACTORY, HELLION, REAPER, \
+    REFINERY, FACTORY, HELLION, REAPER, ORBITALCOMMAND, \
     SUPPLYDEPOTLOWERED, MORPH_SUPPLYDEPOT_LOWER, MORPH_SUPPLYDEPOT_RAISE
 
 from botlib.terran_bot import TerranBot
@@ -48,7 +48,7 @@ class AlphaBot(TerranBot):
     def barracks_target(self) -> int:
         if not self.units.of_type([UnitTypeId.SUPPLYDEPOT, UnitTypeId.SUPPLYDEPOTLOWERED, UnitTypeId.SUPPLYDEPOTDROP]).ready:
             return 0
-        elif self.units(COMMANDCENTER).amount == 1:
+        elif self.units.of_type([COMMANDCENTER, ORBITALCOMMAND]).amount == 1:
             return 1
         return 5
 
@@ -60,7 +60,7 @@ class AlphaBot(TerranBot):
             return 1
 
         target = 0
-        for cc in self.units(COMMANDCENTER).ready:
+        for cc in self.units.of_type([COMMANDCENTER, ORBITALCOMMAND]).ready:
             target += self.state.vespene_geyser.closer_than(25.0, cc).amount
         return target
 

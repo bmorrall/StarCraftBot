@@ -1,7 +1,7 @@
 import math
 
 import sc2
-from sc2.constants import COMMANDCENTER, REFINERY, SCV, SUPPLYDEPOT
+from sc2.constants import COMMANDCENTER, ORBITALCOMMAND, REFINERY, SCV, SUPPLYDEPOT
 
 
 class BuildInfo:
@@ -25,7 +25,7 @@ class BuildInfo:
         # The more units we have, the quicker we reach capacity
         build_capacity = math.floor(self.game.supply_used / 100) + 1
 
-        if not self.game.units(COMMANDCENTER).ready or self.game.supply_cap == self.game.supply_used:
+        if not self.game.units.of_type([COMMANDCENTER, ORBITALCOMMAND]).ready or self.game.supply_cap == self.game.supply_used:
             # Ensure we save money for a new command center
             return 0
         elif self.game.units(SUPPLYDEPOT).amount + self.game.already_pending(SUPPLYDEPOT) < 2:
@@ -39,7 +39,7 @@ class BuildInfo:
     @property
     def _target_workers(self):
         ideal = 1  # one for construction
-        for cc in self.game.units(COMMANDCENTER):
+        for cc in self.game.units.of_type([COMMANDCENTER, ORBITALCOMMAND]):
             ideal += cc.ideal_harvesters
         # Add pending command center units count
         ideal += self.game.already_pending(COMMANDCENTER) * 8
