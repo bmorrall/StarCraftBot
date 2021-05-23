@@ -156,10 +156,13 @@ class OrbitalCommandBuilder(QuotaStructureBuilder):
         super().__init__(game, ORBITALCOMMAND)
 
     def should_build(self):
-        return super().should_build() and self.game.units(COMMANDCENTER).idle and self.game.units(BARRACKS).ready.exists
+        return super().should_build() and \
+            self.game.can_afford(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND) and \
+            self.game.units(COMMANDCENTER).ready.idle and \
+            self.game.units(BARRACKS).ready
 
     async def build_single(self):
-        for cc in self.game.units(COMMANDCENTER).idle:
+        for cc in self.game.units(COMMANDCENTER).ready.idle:
             return await self.game.do(cc(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND))
 
         return True

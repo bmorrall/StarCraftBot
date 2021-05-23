@@ -4,6 +4,7 @@ import random
 import sc2
 from sc2 import run_game, maps, Race, Difficulty
 from sc2 import position
+from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.player import Bot, Computer
 from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, MARINE, \
@@ -12,37 +13,51 @@ from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, MARINE, \
 
 from botlib.terran_bot import TerranBot
 
+
 class AlphaBot(TerranBot):
     def __init__(self):
         self.scout_target = None
         super().__init__()
 
     async def on_step(self, iteration):
-        # Plan out Operations
+        # Configure all background services
+        self.building_constructor.set_command_center_target(
+            self.command_center_target)
+        self.building_constructor.set_orbital_command_target(
+            self.orbital_command_target)
+        self.building_constructor.set_barracks_target(self.barracks_target)
+        self.building_constructor.set_factory_target(self.factory_target)
+        self.building_constructor.set_refinery_target(self.refinery_target)
+
+        # Allow background services to do their thing
+        await super().on_step(iteration)
+
         await self.distribute_workers()  # in sc2/bot_ai.py
+        await self.call_down_mules()
+
+        # Plan out Operations
         await self.train_workers()
         await self.train_reaper()
         await self.train_marines()
         await self.train_hellions()
         # await self.repair_command_center()
 
-        # Configure all background services
-        self.building_constructor.set_command_center_target(self.command_center_target)
-        self.building_constructor.set_barracks_target(self.barracks_target)
-        self.building_constructor.set_factory_target(self.factory_target)
-        self.building_constructor.set_refinery_target(self.refinery_target)
-
         await self.move_reaper()
         await self.marines_attack()
         if self.units(MARINE).amount >= 20:
             await self.hellions_attack()
 
-        # Allow background services to do their thing
-        await super().on_step(iteration)
-
     @property
     def command_center_target(self) -> int:
         return 2
+
+    @property
+    def orbital_command_target(self) -> int:
+        if self.units(FACTORY).ready:
+            return 2
+        elif self.units(BARRACKS).ready:
+            return 1
+        return 0
 
     @property
     def barracks_target(self) -> int:
@@ -122,7 +137,6 @@ class AlphaBot(TerranBot):
 
         for hellion in self.units(HELLION).idle:
             await self.do(hellion.attack(target))
-
 
 
 run_game(maps.get("Simple64"), [

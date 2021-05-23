@@ -1,6 +1,8 @@
 import sc2
 from sc2.constants import COMMANDCENTER, ORBITALCOMMAND, SCV
 from sc2.constants import SUPPLYDEPOT, SUPPLYDEPOTLOWERED, MORPH_SUPPLYDEPOT_LOWER, MORPH_SUPPLYDEPOT_RAISE
+from sc2.ids.ability_id import AbilityId
+from sc2.ids.unit_typeid import UnitTypeId
 
 from .build_info import BuildInfo
 from .building_constructor import BuildingConstructor
@@ -23,6 +25,14 @@ class TerranBot(sc2.BotAI):
             if workers_wanted > 0 and self.can_afford(SCV):
                 workers_wanted -= 1
                 await self.do(cc.train(SCV))
+
+    async def call_down_mules(self):
+        # manage orbital energy and drop mules
+        for oc in self.units(UnitTypeId.ORBITALCOMMAND).filter(lambda x: x.energy >= 50):
+            mfs = self.state.mineral_field.closer_than(10, oc)
+            if mfs:
+                mf = max(mfs, key=lambda x: x.mineral_contents)
+                await self.do(oc(AbilityId.CALLDOWNMULE_CALLDOWNMULE, mf))
 
     async def raise_lower_depots(self):
         # Raise depos when enemies are nearby
