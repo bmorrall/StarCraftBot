@@ -72,7 +72,8 @@ class StructureBuilder:
         return self.known_total + self.pending_total
 
     def debug(self, iteration, message):
-        print(iteration, self.game.supply_used, message)
+        print(iteration, "{}/{}".format(self.game.supply_used,
+              self.game.supply_cap), message)
 
 
 class SupplyDepotBuilder(StructureBuilder):
@@ -90,7 +91,10 @@ class SupplyDepotBuilder(StructureBuilder):
         return self.known_depots.amount
 
     def should_build(self) -> bool:
-        return super().should_build() and (self.game.supply_left < 5 or not self.known_total) and not self.game.already_pending(SUPPLYDEPOT) and self.game.supply_used < 200
+        return super().should_build() and \
+            (self.game.supply_left < 5 or not self.known_total or self.game.supply_cap > 50) and \
+            self.pending_building < self.threshold and \
+            self.game.supply_cap < 200
 
     async def build_single(self):
         return await self.game.build(self.unit_type, near=self.next_location())
@@ -110,6 +114,17 @@ class SupplyDepotBuilder(StructureBuilder):
         # Build any other supply depots as needed
         map_center = self.game.game_info.map_center
         return self.game.units.of_type([COMMANDCENTER, ORBITALCOMMAND]).random.position.towards(map_center, 8)
+
+    @property
+    def pending_building(self) -> int:
+        # return self.pending_total + self.known_depots.not_ready.amount
+        return self.game.already_pending(SUPPLYDEPOT)
+
+    @property
+    def threshold(self) -> int:
+        if self.game.supply_cap > 100:
+            return 2
+        return 1
 
 
 class QuotaStructureBuilder(StructureBuilder):
