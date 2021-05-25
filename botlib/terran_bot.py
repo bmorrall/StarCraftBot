@@ -19,6 +19,9 @@ class TerranBot(sc2.BotAI):
 
         await self.building_constructor.on_step(iteration)
 
+    def set_build_target(self, unit_type: UnitTypeId, target: int):
+        self.building_constructor.set_build_target(unit_type, target)
+
     async def train_workers(self):
         workers_wanted = self.build_info.workers_wanted
         for cc in self.units.of_type([COMMANDCENTER, ORBITALCOMMAND]).ready.idle:

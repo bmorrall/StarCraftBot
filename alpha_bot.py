@@ -21,13 +21,16 @@ class AlphaBot(TerranBot):
 
     async def on_step(self, iteration):
         # Configure all background services
-        self.building_constructor.set_command_center_target(
-            self.command_center_target)
-        self.building_constructor.set_orbital_command_target(
-            self.orbital_command_target)
-        self.building_constructor.set_barracks_target(self.barracks_target)
-        self.building_constructor.set_factory_target(self.factory_target)
-        self.building_constructor.set_refinery_target(self.refinery_target)
+        self.set_build_target(
+            COMMANDCENTER, self.command_center_target)
+        self.set_build_target(
+            ORBITALCOMMAND, self.orbital_command_target)
+        self.set_build_target(
+            BARRACKS, self.barracks_target)
+        self.set_build_target(
+            FACTORY, self.factory_target)
+        self.set_build_target(
+            REFINERY, self.refinery_target)
 
         # Allow background services to do their thing
         await super().on_step(iteration)
