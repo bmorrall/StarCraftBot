@@ -210,6 +210,9 @@ class BarracksBuilder(QuotaStructureBuilder):
     def __init__(self, game: sc2.BotAI) -> None:
         super().__init__(game, BARRACKS)
 
+    def should_build(self):
+        return super().should_build() and self.game.units.of_type([UnitTypeId.SUPPLYDEPOT, UnitTypeId.SUPPLYDEPOTLOWERED, UnitTypeId.SUPPLYDEPOTDROP]).ready
+
     def next_location(self) -> Point2:
         if self.known_total:
             return self.game.units(BARRACKS).first
