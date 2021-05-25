@@ -60,6 +60,7 @@ class AlphaBot(TerranBot):
 
         await self.move_reaper()
         await self.marines_attack()
+        await self.heal_marines()
         if self.units(MARINE).amount >= 20:
             await self.hellions_attack()
 
@@ -160,6 +161,17 @@ class AlphaBot(TerranBot):
 
         for hellion in self.units(HELLION).idle:
             await self.do(hellion.attack(target))
+
+    async def heal_marines(self):
+        injured_marines = self.units(MARINE).filter(
+            lambda x: x.health < x.health_max and not self.units(MEDIVAC).filter(lambda m: m.order_target == x.tag))
+        if not injured_marines:
+            return
+
+        for medivac in self.units(MEDIVAC).idle.filter(lambda x: not x.order_target):
+            if medivac.energy > 5 and injured_marines:
+                closest_marine = injured_marines.closest_to(medivac.position)
+                await self.do(medivac(AbilityId.MEDIVACHEAL_HEAL, closest_marine))
 
 
 run_game(maps.get("Simple64"), [
