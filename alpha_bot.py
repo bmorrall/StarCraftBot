@@ -1,4 +1,5 @@
 
+from botlib.build_queue import BuildQueue
 import random
 
 import sc2
@@ -7,9 +8,8 @@ from sc2 import position
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.player import Bot, Computer
-from sc2.constants import COMMANDCENTER, SCV, SUPPLYDEPOT, BARRACKS, MARINE, \
-    REFINERY, FACTORY, HELLION, REAPER, ORBITALCOMMAND, \
-    SUPPLYDEPOTLOWERED, MORPH_SUPPLYDEPOT_LOWER, MORPH_SUPPLYDEPOT_RAISE
+from sc2.constants import COMMANDCENTER, BARRACKS, MARINE, \
+    REFINERY, FACTORY, HELLION, REAPER, ORBITALCOMMAND
 
 from botlib.terran_bot import TerranBot
 
@@ -19,18 +19,28 @@ class AlphaBot(TerranBot):
         self.scout_target = None
         super().__init__()
 
+        # Configure the Build Queue
+        self.build_queue = BuildQueue()
+
+        # https://lotv.spawningtool.com/build/111889/
+        self.build_queue.add_step(COMMANDCENTER, 1)
+        self.build_queue.add_step(BARRACKS, 1)
+        self.build_queue.add_step(REFINERY, 1)
+        self.build_queue.add_step(ORBITALCOMMAND, 1)
+        self.build_queue.add_step(COMMANDCENTER, 1)
+        self.build_queue.add_step(FACTORY, 1)
+        self.build_queue.add_step(REFINERY, 1)
+
+        # legacy win code
+        self.build_queue.add_step(FACTORY, 1)
+        self.build_queue.add_step(BARRACKS, 2)
+        self.build_queue.add_step(REFINERY, 2)
+        self.build_queue.add_step(FACTORY, 1)
+        self.build_queue.add_step(BARRACKS, 2)
+
     async def on_step(self, iteration):
         # Configure all background services
-        self.set_build_target(
-            COMMANDCENTER, self.command_center_target)
-        self.set_build_target(
-            ORBITALCOMMAND, self.orbital_command_target)
-        self.set_build_target(
-            BARRACKS, self.barracks_target)
-        self.set_build_target(
-            FACTORY, self.factory_target)
-        self.set_build_target(
-            REFINERY, self.refinery_target)
+        await self.build_queue.on_step(self.units, self.building_constructor)
 
         # Allow background services to do their thing
         await super().on_step(iteration)
