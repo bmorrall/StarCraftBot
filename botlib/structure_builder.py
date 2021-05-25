@@ -4,7 +4,7 @@ import sc2
 from sc2 import units
 from sc2.constants import COMMANDCENTER, ORBITALCOMMAND, BARRACKS, REFINERY, \
     SUPPLYDEPOT, SUPPLYDEPOTLOWERED, SUPPLYDEPOTDROP, \
-    FACTORY
+    FACTORY, STARPORT
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.position import Point2
@@ -225,8 +225,20 @@ class FactoryBuilder(QuotaStructureBuilder):
         super().__init__(game, FACTORY)
 
     def should_build(self):
-        return super().should_build() and self.game.units(BARRACKS)
+        return super().should_build() and self.game.units(BARRACKS).ready
 
     def next_location(self) -> Point2:
         # Building near the most recently created Barracks
         return self.game.units(BARRACKS).first
+
+
+class StarportBuilder(QuotaStructureBuilder):
+    def __init__(self, game: sc2.BotAI) -> None:
+        super().__init__(game, STARPORT)
+
+    def should_build(self):
+        return super().should_build() and self.game.units(FACTORY).ready
+
+    def next_location(self) -> Point2:
+        # Building near the most recently created Factory
+        return self.game.units(FACTORY).first

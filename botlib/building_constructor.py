@@ -1,6 +1,6 @@
 from abc import abstractmethod
 import sc2
-from sc2.constants import COMMANDCENTER, ORBITALCOMMAND, SUPPLYDEPOT, BARRACKS, FACTORY, REFINERY
+from sc2.constants import COMMANDCENTER, ORBITALCOMMAND, SUPPLYDEPOT, BARRACKS, FACTORY, REFINERY, STARPORT
 from sc2.data import Target
 from sc2.ids.unit_typeid import UnitTypeId
 
@@ -8,7 +8,7 @@ from sc2.position import Point2
 from sc2.unit import Unit
 
 from .structure_builder import RefineryBuilder, SupplyDepotBuilder, CommandCenterBuilder, \
-    BarracksBuilder, FactoryBuilder, OrbitalCommandBuilder
+    BarracksBuilder, FactoryBuilder, OrbitalCommandBuilder, StarportBuilder
 
 
 class BuildingConstructor:
@@ -21,7 +21,8 @@ class BuildingConstructor:
             SUPPLYDEPOT: SupplyDepotBuilder(game),
             BARRACKS: BarracksBuilder(game),
             FACTORY: FactoryBuilder(game),
-            REFINERY: RefineryBuilder(game)
+            REFINERY: RefineryBuilder(game),
+            STARPORT: StarportBuilder(game)
         }
 
     async def on_step(self, iteration):

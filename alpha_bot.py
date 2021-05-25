@@ -9,7 +9,7 @@ from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.player import Bot, Computer
 from sc2.constants import COMMANDCENTER, BARRACKS, MARINE, \
-    REFINERY, FACTORY, HELLION, REAPER, ORBITALCOMMAND
+    REFINERY, FACTORY, HELLION, REAPER, ORBITALCOMMAND, STARPORT, MEDIVAC
 
 from botlib.terran_bot import TerranBot
 
@@ -30,6 +30,8 @@ class AlphaBot(TerranBot):
         self.build_queue.add_step(COMMANDCENTER, 1)
         self.build_queue.add_step(FACTORY, 1)
         self.build_queue.add_step(REFINERY, 1)
+        self.build_queue.add_step(STARPORT, 1)
+        self.build_queue.add_step(ORBITALCOMMAND, 1)
 
         # legacy win code
         self.build_queue.add_step(FACTORY, 1)
@@ -53,6 +55,7 @@ class AlphaBot(TerranBot):
         await self.train_reaper()
         await self.train_marines()
         await self.train_hellions()
+        await self.train_medivacs()
         # await self.repair_command_center()
 
         await self.move_reaper()
@@ -115,6 +118,13 @@ class AlphaBot(TerranBot):
         for factory in self.units(FACTORY).ready.idle:
             if self.can_afford(HELLION):
                 await self.do(factory.train(HELLION))
+
+    async def train_medivacs(self):
+        if self.units(MEDIVAC).amount + self.already_pending(MEDIVAC) < 5:
+            idle_starport = self.units(STARPORT).ready.idle
+            if idle_starport and self.can_afford(MEDIVAC):
+                starport = idle_starport.first
+                await self.do(starport.train(MEDIVAC))
 
     async def move_reaper(self):
         if self.units(REAPER):
