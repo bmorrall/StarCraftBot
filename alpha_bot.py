@@ -8,8 +8,8 @@ from sc2 import position
 from sc2.ids.ability_id import AbilityId
 from sc2.ids.unit_typeid import UnitTypeId
 from sc2.player import Bot, Computer
-from sc2.constants import COMMANDCENTER, BARRACKS, MARINE, \
-    REFINERY, FACTORY, HELLION, REAPER, ORBITALCOMMAND, STARPORT, MEDIVAC
+from sc2.constants import COMMANDCENTER, BARRACKS, MARINE, SCV, \
+    REFINERY, FACTORY, HELLION, REAPER, ORBITALCOMMAND, STARPORT, MEDIVAC, SUPPLYDEPOT
 
 from botlib.terran_bot import TerranBot
 
@@ -47,8 +47,10 @@ class AlphaBot(TerranBot):
         # Allow background services to do their thing
         await super().on_step(iteration)
 
-        await self.distribute_workers()  # in sc2/bot_ai.py
-        await self.call_down_mules()
+        await self.resume_buildings()
+        if self.units.of_type([COMMANDCENTER, ORBITALCOMMAND]):
+            await self.distribute_workers()  # in sc2/bot_ai.py
+            await self.call_down_mules()
 
         # Plan out Operations
         await self.train_workers()
@@ -172,6 +174,33 @@ class AlphaBot(TerranBot):
             if medivac.energy > 5 and injured_marines:
                 closest_marine = injured_marines.closest_to(medivac.position)
                 await self.do(medivac(AbilityId.MEDIVACHEAL_HEAL, closest_marine))
+
+    async def resume_buildings(self):
+        ''' Resume all incomplete buildings '''
+
+        # of_type([COMMANDCENTER, ORBITALCOMMAND, SUPPLYDEPOT]).
+        # TODO: Handle Refineries
+        incomplete_structures = self.units.structure.not_ready.filter(
+            lambda x: x.health < x.health_max and not x.type_id == REFINERY and not self.units(SCV).filter(lambda s: s.is_constructing_scv and s.order_target == x.position or s.order_target == x.tag))
+
+        for structure in incomplete_structures:
+            idle_scvs = self.units(SCV).idle
+            if idle_scvs:
+                print("Fix with idle", structure)
+                await self.repair_with_scv(idle_scvs, structure)
+                return
+
+            non_vespene_scvs = self.units(SCV).filter(
+                lambda x: not x.is_carrying_vespene and not x.is_carrying_minerals)
+            if non_vespene_scvs:
+                print("Fix with worker", structure)
+                await self.repair_with_scv(non_vespene_scvs, structure)
+                return
+
+    # Uses the "SMART" ability to resume construction
+    async def repair_with_scv(self, scvs, structure):
+        scv = scvs.closest_to(structure.position)
+        await self.do(scv(AbilityId.SMART, structure))
 
 
 run_game(maps.get("Simple64"), [
